@@ -105,7 +105,7 @@ Requirements:
       contents: userPrompt,
     });
 
-    const rawJson = response.text;
+    const rawJson = response.text || '';
     
     if (!rawJson) {
       throw new Error('Empty response from Gemini');

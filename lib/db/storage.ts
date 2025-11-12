@@ -2,7 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Article } from './types';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const isTest = process.env.NODE_ENV === 'test';
+const DATA_DIR = isTest 
+  ? path.join(process.cwd(), 'test-data') 
+  : path.join(process.cwd(), 'data');
 const ARTICLES_FILE = path.join(DATA_DIR, 'articles.json');
 
 function ensureDataDir() {
