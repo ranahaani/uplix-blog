@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import readingTime from 'reading-time';
-import { insertArticle } from '@/lib/db/supabase';
+import { insertArticle } from '@/lib/db/storage';
 import { sanitizeHTML } from '@/lib/utils/sanitize';
 import { generateSlug } from '@/lib/utils/slug';
 import { GenerateArticleRequest, GenerateArticleResponse } from '@/lib/db/types';
@@ -13,6 +13,31 @@ interface GeneratedArticle {
   description: string;
   content: string;
   og_image_alt: string;
+}
+
+async function generateArticleImage(prompt: string): Promise<string | null> {
+  try {
+    const response = await ai.models.generateImages({
+      model: 'gemini-2.5-flash-image',
+      prompt: prompt,
+      config: {
+        numberOfImages: 1,
+        outputMimeType: 'image/jpeg',
+        aspectRatio: '16:9',
+      },
+    });
+
+    if (response.generatedImages && response.generatedImages.length > 0) {
+      const base64ImageBytes = response.generatedImages[0].image?.imageBytes;
+      if (base64ImageBytes) {
+        return `data:image/jpeg;base64,${base64ImageBytes}`;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error generating image:', error);
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -28,7 +53,8 @@ export async function POST(request: NextRequest) {
 
     const { idea, tags = [], tone = 'informative', author = 'AI Writer' } = body;
 
-    // Generate article content with Gemini
+    console.log('Generating article with Gemini...');
+    
     const systemPrompt = `You are an expert content writer creating high-quality, SEO-optimized blog articles. 
 Your articles should be well-structured, engaging, and at least 1000 words long.
 Always include:
@@ -60,8 +86,6 @@ Requirements:
 - Make it SEO-friendly with natural keyword usage
 - Tone: ${tone}`;
 
-    console.log('Generating article with Gemini...');
-    
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       config: {
@@ -89,16 +113,14 @@ Requirements:
 
     const generated: GeneratedArticle = JSON.parse(rawJson);
 
-    // Sanitize HTML content
+    console.log('Generating article image...');
+    const imagePrompt = `Create a professional, modern blog header image for an article titled "${generated.title}". Style: clean, minimalist, professional. ${generated.og_image_alt}`;
+    const articleImage = await generateArticleImage(imagePrompt);
+
     const sanitizedContent = sanitizeHTML(generated.content);
-
-    // Generate slug from title
     const slug = generateSlug(generated.title);
-
-    // Calculate reading time
     const stats = readingTime(sanitizedContent);
 
-    // Prepare article for database
     const articleData = {
       title: generated.title,
       slug: slug,
@@ -110,21 +132,21 @@ Requirements:
       tone: tone,
       reading_time: Math.ceil(stats.minutes),
       og_image_alt: generated.og_image_alt,
+      image: articleImage || undefined,
     };
 
-    console.log('Saving article to database...');
+    console.log('Saving article to file storage...');
     
-    // Save to Supabase
     const savedArticle = await insertArticle(articleData);
 
     if (!savedArticle) {
-      throw new Error('Failed to save article to database');
+      throw new Error('Failed to save article');
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
                     (process.env.REPLIT_DEV_DOMAIN ? 
                     `https://${process.env.REPLIT_DEV_DOMAIN}` : 
-                    'http://localhost:3000');
+                    'http://localhost:5000');
 
     const articleUrl = `${baseUrl}/article/${savedArticle.slug}`;
 

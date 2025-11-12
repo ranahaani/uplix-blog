@@ -10,6 +10,7 @@ export interface Article {
   tone: string;
   reading_time: number;
   og_image_alt: string | null;
+  image?: string;
   created_at: string;
   updated_at: string;
 }

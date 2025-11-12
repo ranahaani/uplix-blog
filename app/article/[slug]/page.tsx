@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { getArticleBySlug, getAllArticles } from '@/lib/db/supabase';
+import { getArticleBySlug, getAllArticles } from '@/lib/db/storage';
 
 export const revalidate = 60;
 
