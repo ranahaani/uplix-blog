@@ -122,9 +122,9 @@ Requirements:
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                    process.env.REPLIT_DEV_DOMAIN ? 
+                    (process.env.REPLIT_DEV_DOMAIN ? 
                     `https://${process.env.REPLIT_DEV_DOMAIN}` : 
-                    'http://localhost:3000';
+                    'http://localhost:3000');
 
     const articleUrl = `${baseUrl}/article/${savedArticle.slug}`;
 
@@ -135,7 +135,7 @@ Requirements:
       url: articleUrl,
       description: savedArticle.description,
       author: savedArticle.author,
-      tags: savedArticle.tags,
+      tags: savedArticle.tags || [],
       reading_time: savedArticle.reading_time,
       created_at: savedArticle.created_at,
     };

@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       publishedTime: article.created_at,
       authors: [article.author],
-      tags: article.tags,
+      tags: article.tags ?? undefined,
     },
     twitter: {
       card: 'summary_large_image',

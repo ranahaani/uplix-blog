@@ -6,10 +6,10 @@ export interface Article {
   content: string;
   html_content: string;
   author: string;
-  tags: string[];
+  tags: string[] | null;
   tone: string;
   reading_time: number;
-  og_image_alt: string;
+  og_image_alt: string | null;
   created_at: string;
   updated_at: string;
 }
