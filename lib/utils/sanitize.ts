@@ -1,6 +1,4 @@
-import createDOMPurify from 'isomorphic-dompurify';
-
-const DOMPurify = createDOMPurify(typeof window !== 'undefined' ? window : undefined);
+import DOMPurify from 'isomorphic-dompurify';
 
 export function sanitizeHTML(html: string): string {
   return DOMPurify.sanitize(html, {

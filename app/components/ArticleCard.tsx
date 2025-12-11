@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import Image from 'next/image';
 
 interface ArticleCardProps {
   slug: string;
@@ -20,27 +19,28 @@ export default function ArticleCard({ slug, title, description, author, readingT
   return (
     <article
       style={{
-        background: 'white',
+        background: 'var(--theme-surface)',
         borderRadius: '16px',
         overflow: 'hidden',
         transition: 'transform 0.3s ease, box-shadow 0.3s ease',
         cursor: 'pointer',
         transform: isHovered ? 'translateY(-8px)' : 'translateY(0)',
         boxShadow: isHovered 
-          ? '0 20px 40px rgba(28, 183, 109, 0.15)' 
+          ? '0 20px 40px rgba(50, 176, 40, 0.15)' 
           : '0 4px 12px rgba(0, 0, 0, 0.08)',
+        border: `1px solid ${isHovered ? 'var(--theme-accent)' : 'var(--theme-border)'}`,
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={`/article/${slug}`}>
+      <Link href={`/article/${slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
         {image && (
           <div style={{ 
             position: 'relative',
             width: '100%',
             height: '220px',
             overflow: 'hidden',
-            background: 'linear-gradient(135deg, #1CB76D 0%, #0a9f5a 100%)'
+            background: 'linear-gradient(135deg, #32B028 0%, #1CB76D 100%)'
           }}>
             <img 
               src={image} 
@@ -58,7 +58,7 @@ export default function ArticleCard({ slug, title, description, author, readingT
         
         <div style={{ padding: '1.75rem' }}>
           <h2 style={{ 
-            color: '#1CB76D', 
+            color: 'var(--theme-accent)', 
             marginBottom: '0.75rem', 
             fontSize: '1.5rem',
             fontWeight: 600,
@@ -68,7 +68,7 @@ export default function ArticleCard({ slug, title, description, author, readingT
           </h2>
           
           <p style={{ 
-            color: '#666', 
+            color: 'var(--theme-text-secondary)', 
             marginBottom: '1.5rem', 
             lineHeight: '1.7',
             fontSize: '0.95rem',
@@ -82,13 +82,13 @@ export default function ArticleCard({ slug, title, description, author, readingT
                 <span
                   key={idx}
                   style={{
-                    background: 'linear-gradient(135deg, #e8f8f0 0%, #d4f1e3 100%)',
-                    color: '#0a9f5a',
+                    background: 'linear-gradient(135deg, rgba(50, 176, 40, 0.1) 0%, rgba(28, 183, 109, 0.1) 100%)',
+                    color: 'var(--theme-accent)',
                     padding: '0.35rem 0.9rem',
                     borderRadius: '20px',
                     fontSize: '0.8rem',
                     fontWeight: 500,
-                    border: '1px solid rgba(28, 183, 109, 0.2)',
+                    border: '1px solid rgba(50, 176, 40, 0.2)',
                   }}
                 >
                   {tag}
@@ -102,16 +102,15 @@ export default function ArticleCard({ slug, title, description, author, readingT
             justifyContent: 'space-between',
             alignItems: 'center',
             fontSize: '0.85rem',
-            color: '#999',
+            color: 'var(--theme-text-secondary)',
             paddingTop: '1rem',
-            borderTop: '1px solid #f0f0f0',
+            borderTop: '1px solid var(--theme-border)',
           }}>
-            <span style={{ fontWeight: 500, color: '#666' }}>{author}</span>
+            <span style={{ fontWeight: 500 }}>{author}</span>
             <span style={{ 
-              background: '#f8f9fa',
+              background: 'var(--theme-bg)',
               padding: '0.25rem 0.75rem',
               borderRadius: '12px',
-              color: '#666',
               fontSize: '0.8rem',
             }}>
               {readingTime} min read
