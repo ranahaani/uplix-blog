@@ -132,3 +132,12 @@ dist
 # Local data storage
 /data
 /test-data
+
+# Replit specific
+.local/
+.config/
+.breakpoints
+.replit
+replit.nix
+.upm/
+cache/
