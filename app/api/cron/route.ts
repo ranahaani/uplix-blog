@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import readingTime from 'reading-time';
-import { insertArticle, getAllArticles } from '@/lib/db/storage';
+import { insertArticle } from '@/lib/db/storage';
 import { sanitizeHTML } from '@/lib/utils/sanitize';
 import { generateSlug } from '@/lib/utils/slug';
 import { generateBlogImage } from '@/lib/utils/imageGenerator';
@@ -24,6 +24,7 @@ interface GeneratedArticle {
 function getNextTopic(): string {
   try {
     if (!fs.existsSync(TOPICS_FILE)) {
+      console.log('[CRON] Topics file not found, using default topic');
       return DEFAULT_TOPIC;
     }
     
@@ -31,19 +32,22 @@ function getNextTopic(): string {
     const lines = content.split('\n').filter(line => line.trim().length > 0);
     
     if (lines.length === 0) {
+      console.log('[CRON] Topics file empty, using default topic');
       return DEFAULT_TOPIC;
     }
     
     // Get the first topic
     const topic = lines[0].trim();
     
-    // Remove the used topic and save
-    const remainingTopics = lines.slice(1);
-    fs.writeFileSync(TOPICS_FILE, remainingTopics.join('\n'));
+    // Remove the used topic and save (only in development - file system is read-only in production)
+    if (process.env.NODE_ENV !== 'production') {
+      const remainingTopics = lines.slice(1);
+      fs.writeFileSync(TOPICS_FILE, remainingTopics.join('\n'));
+    }
     
     return topic || DEFAULT_TOPIC;
   } catch (error) {
-    console.error('Error reading topics file:', error);
+    console.error('[CRON] Error reading topics file:', error);
     return DEFAULT_TOPIC;
   }
 }
@@ -54,8 +58,7 @@ export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    // Allow without secret for testing, but log warning
-    console.warn('Cron endpoint called without valid secret');
+    console.warn('[CRON] Endpoint called without valid secret');
   }
   
   try {
@@ -131,11 +134,19 @@ Requirements:
     console.log(`[CRON] Generating cover image...`);
 
     // Generate cover image
-    const articleImage = await generateBlogImage(
-      generated.title,
-      'modern, professional, tech, vibrant',
-      '16:9'
-    );
+    let articleImage: string | null = null;
+    try {
+      articleImage = await generateBlogImage(
+        generated.title,
+        'modern, professional, tech, vibrant',
+        '16:9'
+      );
+      if (articleImage) {
+        console.log('[CRON] Cover image generated successfully');
+      }
+    } catch (imgError) {
+      console.error('[CRON] Error generating image:', imgError);
+    }
 
     const sanitizedContent = sanitizeHTML(generated.content);
     const slug = generateSlug(generated.title);
@@ -155,15 +166,15 @@ Requirements:
       image: articleImage || undefined,
     };
 
-    console.log(`[CRON] Saving article to storage...`);
+    console.log(`[CRON] Saving article to Supabase...`);
     
     const savedArticle = await insertArticle(articleData);
 
     if (!savedArticle) {
-      throw new Error('Failed to save article');
+      throw new Error('Failed to save article to Supabase');
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://blogs.uplix.app';
     const articleUrl = `${baseUrl}/article/${savedArticle.slug}`;
 
     console.log(`[CRON] Article published successfully: ${articleUrl}`);
@@ -199,4 +210,3 @@ Requirements:
 export async function POST(request: NextRequest) {
   return GET(request);
 }
-

@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://example.com';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://blogs.uplix.app';
   const articleUrl = `${baseUrl}/article/${article.slug}`;
 
   return {
@@ -43,11 +43,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       authors: [article.author],
       tags: article.tags ?? undefined,
       siteName: 'Uplix Blog',
+      images: article.image ? [{ url: article.image }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: article.title,
       description: article.description,
+      images: article.image ? [article.image] : undefined,
     },
     alternates: {
       canonical: articleUrl,
@@ -63,7 +65,7 @@ export default async function ArticlePage({ params }: PageProps) {
     notFound();
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://example.com';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://blogs.uplix.app';
   const articleUrl = `${baseUrl}/article/${article.slug}`;
 
   const jsonLd = {
@@ -71,6 +73,7 @@ export default async function ArticlePage({ params }: PageProps) {
     '@type': 'Article',
     headline: article.title,
     description: article.description,
+    image: article.image || undefined,
     author: {
       '@type': 'Person',
       name: article.author,
@@ -80,6 +83,7 @@ export default async function ArticlePage({ params }: PageProps) {
     publisher: {
       '@type': 'Organization',
       name: 'Uplix Blog',
+      url: 'https://uplix.app',
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
@@ -113,6 +117,28 @@ export default async function ArticlePage({ params }: PageProps) {
           </Link>
 
           <article className="article-content">
+            {/* Featured Image */}
+            {article.image && (
+              <div style={{
+                width: '100%',
+                maxHeight: '400px',
+                overflow: 'hidden',
+                borderRadius: '16px',
+                marginBottom: '2rem',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+              }}>
+                <img 
+                  src={article.image} 
+                  alt={article.og_image_alt || article.title}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              </div>
+            )}
+
             <header style={{ marginBottom: '2rem' }}>
               <h1 style={{ 
                 marginBottom: '1rem', 

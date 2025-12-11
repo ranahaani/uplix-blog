@@ -92,16 +92,18 @@ Requirements:
     console.log('Generating article cover image with Gemini...');
     
     // Generate cover image using Gemini
-    const articleImage = await generateBlogImage(
-      generated.title,
-      'modern, professional, tech, vibrant',
-      '16:9'
-    );
-
-    if (articleImage) {
-      console.log('Cover image generated successfully');
-    } else {
-      console.log('Could not generate cover image, proceeding without it');
+    let articleImage: string | null = null;
+    try {
+      articleImage = await generateBlogImage(
+        generated.title,
+        'modern, professional, tech, vibrant',
+        '16:9'
+      );
+      if (articleImage) {
+        console.log('Cover image generated successfully');
+      }
+    } catch (imgError) {
+      console.error('Error generating cover image:', imgError);
     }
 
     const sanitizedContent = sanitizeHTML(generated.content);
@@ -122,19 +124,15 @@ Requirements:
       image: articleImage || undefined,
     };
 
-    console.log('Saving article to file storage...');
+    console.log('Saving article to Supabase...');
     
     const savedArticle = await insertArticle(articleData);
 
     if (!savedArticle) {
-      throw new Error('Failed to save article');
+      throw new Error('Failed to save article to Supabase');
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                    (process.env.REPLIT_DEV_DOMAIN ? 
-                    `https://${process.env.REPLIT_DEV_DOMAIN}` : 
-                    'http://localhost:5000');
-
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://blogs.uplix.app';
     const articleUrl = `${baseUrl}/article/${savedArticle.slug}`;
 
     const responseData: GenerateArticleResponse = {
