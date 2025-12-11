@@ -4,6 +4,7 @@ import readingTime from 'reading-time';
 import { insertArticle } from '@/lib/db/storage';
 import { sanitizeHTML } from '@/lib/utils/sanitize';
 import { generateSlug } from '@/lib/utils/slug';
+import { generateBlogImage } from '@/lib/utils/imageGenerator';
 import { GenerateArticleRequest, GenerateArticleResponse } from '@/lib/db/types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
@@ -13,31 +14,6 @@ interface GeneratedArticle {
   description: string;
   content: string;
   og_image_alt: string;
-}
-
-async function generateArticleImage(prompt: string): Promise<string | null> {
-  try {
-    const response = await ai.models.generateImages({
-      model: 'gemini-2.5-flash-image',
-      prompt: prompt,
-      config: {
-        numberOfImages: 1,
-        outputMimeType: 'image/jpeg',
-        aspectRatio: '16:9',
-      },
-    });
-
-    if (response.generatedImages && response.generatedImages.length > 0) {
-      const base64ImageBytes = response.generatedImages[0].image?.imageBytes;
-      if (base64ImageBytes) {
-        return `data:image/jpeg;base64,${base64ImageBytes}`;
-      }
-    }
-    return null;
-  } catch (error) {
-    console.error('Error generating image:', error);
-    return null;
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -51,11 +27,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { idea, tags = [], tone = 'informative', author = 'AI Writer' } = body;
+    const { idea, tags = [], tone = 'informative', author = 'Uplix Team' } = body;
 
     console.log('Generating article with Gemini...');
     
-    const systemPrompt = `You are an expert content writer creating high-quality, SEO-optimized blog articles. 
+    const systemPrompt = `You are an expert content writer creating high-quality, SEO-optimized blog articles for Uplix, an AI-powered image editing platform. 
 Your articles should be well-structured, engaging, and at least 1000 words long.
 Always include:
 - A compelling title
@@ -113,9 +89,20 @@ Requirements:
 
     const generated: GeneratedArticle = JSON.parse(rawJson);
 
-    console.log('Generating article image...');
-    const imagePrompt = `Create a professional, modern blog header image for an article titled "${generated.title}". Style: clean, minimalist, professional. ${generated.og_image_alt}`;
-    const articleImage = await generateArticleImage(imagePrompt);
+    console.log('Generating article cover image with Gemini...');
+    
+    // Generate cover image using Gemini
+    const articleImage = await generateBlogImage(
+      generated.title,
+      'modern, professional, tech, vibrant',
+      '16:9'
+    );
+
+    if (articleImage) {
+      console.log('Cover image generated successfully');
+    } else {
+      console.log('Could not generate cover image, proceeding without it');
+    }
 
     const sanitizedContent = sanitizeHTML(generated.content);
     const slug = generateSlug(generated.title);
