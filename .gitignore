@@ -141,3 +141,4 @@ dist
 replit.nix
 .upm/
 cache/
+.vercel
